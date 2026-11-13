@@ -1,1 +1,145 @@
 @import "tailwindcss";
+
+/* Transición suave al cambiar de tema */
+body,
+div,
+section,
+nav,
+header,
+table,
+tr,
+td,
+th,
+input,
+button,
+circle,
+rect {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    stroke 0.2s ease;
+}
+
+/* =========================================================
+   SOBRECARGA COMPLETA PARA TEMA CLARO (Clase html.light)
+   ========================================================= */
+html.light .bg-slate-950 {
+  background-color: #f1f5f9 !important;
+}
+
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/70,
+html.light .bg-slate-950\/80 {
+  background-color: #f8fafc !important;
+}
+
+html.light .bg-slate-900,
+html.light .bg-slate-900\/90 {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Caja inferior de "Diagnóstico del sustrato" y fondos con opacidad */
+html.light [class*="bg-slate-950\/"],
+html.light [class*="bg-slate-900\/"] {
+  background-color: #ffffff !important;
+  border-color: #a7f3d0 !important;
+}
+
+/* Tarjetas con degradado oscuro (Parámetros Ideales en Home) */
+html.light .bg-gradient-to-br,
+html.light .bg-gradient-to-r {
+  background-image: linear-gradient(
+    to bottom right,
+    #ffffff,
+    #ecfdf5
+  ) !important;
+  border-color: #a7f3d0 !important;
+}
+
+/* Círculos de días L-M-M y botones secundarios */
+html.light .bg-slate-800,
+html.light .bg-slate-800\/50,
+html.light .bg-slate-800\/60 {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+html.light .hover\:bg-slate-800\/40:hover,
+html.light .hover\:bg-slate-800\/60:hover,
+html.light .hover\:bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* Bordes nítidos en modo claro */
+html.light .border-slate-800,
+html.light .border-slate-800\/70,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/90,
+html.light .border-slate-700 {
+  border-color: #cbd5e1 !important;
+}
+
+html.light .divide-slate-800\/70 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+/* Tipografía con alto contraste sobre blanco */
+html.light .text-white,
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Acentos sobre fondo claro */
+html.light .text-emerald-400,
+html.light .text-emerald-300 {
+  color: #047857 !important;
+}
+html.light .text-amber-400 {
+  color: #b45309 !important;
+}
+html.light .text-blue-400 {
+  color: #1d4ed8 !important;
+}
+html.light .text-purple-400 {
+  color: #6d28d9 !important;
+}
+
+/* Pista gris suave para los anillos SVG de Home.jsx */
+html.light svg circle[stroke="#1e293b"],
+html.light svg circle:first-of-type {
+  stroke: #e2e8f0 !important;
+}
+
+/* Tooltip y gráficas de Recharts (Analytics.jsx) */
+html.light .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light .recharts-tooltip-label,
+html.light .recharts-tooltip-item {
+  color: #0f172a !important;
+}
+
+html.light .recharts-cartesian-grid-horizontal line,
+html.light .recharts-cartesian-grid-vertical line {
+  stroke: #cbd5e1 !important;
+}
+
+html.light path.recharts-rectangle[fill="#334155"] {
+  fill: #94a3b8 !important;
+}

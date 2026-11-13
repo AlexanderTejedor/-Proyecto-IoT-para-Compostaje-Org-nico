@@ -10,36 +10,86 @@ import {
   Thermometer,
   Droplets,
   Sprout,
+  Terminal,
+  Activity,
 } from "lucide-react";
 
 export default function NodeStatus() {
   const [estadoApi, setEstadoApi] = useState("verificando"); // 'online' | 'offline' | 'verificando'
-  const [ultimaTransmision, setUltimaTransmision] = useState(null);
+  const [ultimoPaquete, setUltimoPaquete] = useState(null);
   const [latenciaMs, setLatenciaMs] = useState(null);
+  const [segundosDesdeEnvio, setSegundosDesdeEnvio] = useState(null);
+  const [mensajeTest, setMensajeTest] = useState(null);
 
-  const verificarNodo = async () => {
+  const verificarNodo = async (esManual = false) => {
     setEstadoApi("verificando");
+    if (esManual) setMensajeTest(null);
+
     const inicio = performance.now();
     try {
+      // Si es manual, damos 500ms para que la animación de testeo sea visible
+      if (esManual) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
       const res = await fetch("http://localhost:3000/api/compost/historial");
       const data = await res.json();
       const fin = performance.now();
-      setLatenciaMs(Math.round(fin - inicio));
+      const ping = Math.max(1, Math.round(fin - inicio - (esManual ? 500 : 0)));
+
+      setLatenciaMs(ping);
       setEstadoApi("online");
+
       if (Array.isArray(data) && data.length > 0) {
-        setUltimaTransmision(data[0].fecha_hora);
+        const ultimo = data[0];
+        setUltimoPaquete(ultimo);
+
+        // Calcular hace cuántos segundos entró el último registro del ESP32
+        const fechaRegistro = new Date(ultimo.fecha_hora.replace(" ", "T"));
+        const diffSegundos = Math.max(
+          0,
+          Math.round((Date.now() - fechaRegistro.getTime()) / 1000),
+        );
+        setSegundosDesdeEnvio(diffSegundos);
+
+        if (esManual) {
+          setMensajeTest({
+            tipo: diffSegundos <= 20 ? "ok" : "warn",
+            texto:
+              diffSegundos <= 20
+                ? `Test exitoso: API respondió en ${ping} ms • ESP32 activo (último paquete hace ${diffSegundos}s).`
+                : `API activa (${ping} ms), pero el ESP32 no reporta datos hace ${diffSegundos}s.`,
+          });
+        }
+      } else if (esManual) {
+        setMensajeTest({
+          tipo: "warn",
+          texto: `API Flask conectada (${ping} ms), pero la base de datos aún no tiene lecturas.`,
+        });
       }
     } catch (error) {
       setEstadoApi("offline");
       setLatenciaMs(null);
+      if (esManual) {
+        setMensajeTest({
+          tipo: "error",
+          texto:
+            "Error de enlace: No se pudo conectar con servidor.py en el puerto 3000.",
+        });
+      }
     }
   };
 
   useEffect(() => {
-    verificarNodo();
-    const intervalo = setInterval(verificarNodo, 10000);
+    verificarNodo(false);
+    const intervalo = setInterval(() => verificarNodo(false), 8000);
     return () => clearInterval(intervalo);
   }, []);
+
+  const espActivo =
+    estadoApi === "online" &&
+    segundosDesdeEnvio !== null &&
+    segundosDesdeEnvio <= 20;
 
   const mapaPines = [
     {
@@ -82,31 +132,65 @@ export default function NodeStatus() {
         </div>
 
         <button
-          onClick={verificarNodo}
-          className="self-start sm:self-auto flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold text-xs px-4 py-2.5 rounded-xl transition"
+          onClick={() => verificarNodo(true)}
+          disabled={estadoApi === "verificando"}
+          className="self-start sm:self-auto flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/10 active:scale-95 cursor-pointer disabled:opacity-60"
         >
           <RefreshCw
             size={15}
-            className={
-              estadoApi === "verificando" ? "animate-spin text-emerald-400" : ""
-            }
+            className={estadoApi === "verificando" ? "animate-spin" : ""}
           />
-          Probar Enlace
+          {estadoApi === "verificando"
+            ? "Verificando enlace..."
+            : "Probar Enlace"}
         </button>
       </header>
 
-      {/* Tarjetas de Topología de Red (3 columnas en escritorio, 1 en móvil) */}
+      {/* Banner de resultado cuando el usuario pulsa "Probar Enlace" */}
+      {mensajeTest && (
+        <div
+          className={`rounded-2xl p-4 border flex items-center justify-between gap-3 text-xs font-semibold ${
+            mensajeTest.tipo === "ok"
+              ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+              : mensajeTest.tipo === "warn"
+                ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                : "bg-red-500/15 border-red-500/30 text-red-400"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Activity size={16} className="shrink-0" />
+            <span>{mensajeTest.texto}</span>
+          </div>
+          <button
+            onClick={() => setMensajeTest(null)}
+            className="text-[11px] underline opacity-80 hover:opacity-100"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Tarjetas de Topología de Red (Las 3 capas del sistema) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Capa 1: Hardware ESP32 */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <Cpu size={20} />
             </div>
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              ESP32 DevKit v1
+            <span
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                espActivo
+                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                  : "bg-amber-500/15 text-amber-400 border-amber-500/30"
+              }`}
+            >
+              {espActivo ? "Transmitiendo" : "En espera"}
             </span>
           </div>
-          <h3 className="text-sm font-bold text-white">Nodo Sensorial</h3>
+          <h3 className="text-sm font-bold text-white">
+            1. Nodo Sensorial (ESP32)
+          </h3>
           <p className="text-xs text-slate-400 mt-1">
             Muestreo cada{" "}
             <span className="text-slate-200 font-semibold">5 segundos</span> vía
@@ -115,11 +199,12 @@ export default function NodeStatus() {
           <div className="mt-3 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex justify-between">
             <span>Último paquete:</span>
             <span className="text-slate-200 font-mono">
-              {ultimaTransmision || "Sin datos"}
+              {ultimoPaquete?.fecha_hora || "Sin datos"}
             </span>
           </div>
         </div>
 
+        {/* Capa 2: Red Local WiFi */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
@@ -129,19 +214,20 @@ export default function NodeStatus() {
               WLAN 2.4 GHz
             </span>
           </div>
-          <h3 className="text-sm font-bold text-white">Transporte Local</h3>
+          <h3 className="text-sm font-bold text-white">2. Transporte Local</h3>
           <p className="text-xs text-slate-400 mt-1">
             Endpoint destino:{" "}
             <span className="text-slate-200 font-mono">/api/compost</span>
           </p>
           <div className="mt-3 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex justify-between">
-            <span>Latencia API local:</span>
+            <span>Latencia API (Ping):</span>
             <span className="text-emerald-400 font-mono font-semibold">
               {latenciaMs !== null ? `${latenciaMs} ms` : "--"}
             </span>
           </div>
         </div>
 
+        {/* Capa 3: Servidor Backend */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
@@ -158,7 +244,7 @@ export default function NodeStatus() {
             )}
           </div>
           <h3 className="text-sm font-bold text-white">
-            Servidor Flask + SQLite
+            3. Servidor Flask + SQLite
           </h3>
           <p className="text-xs text-slate-400 mt-1">
             Persistencia local en{" "}
@@ -166,9 +252,11 @@ export default function NodeStatus() {
             (Puerto 3000).
           </p>
           <div className="mt-3 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex justify-between">
-            <span>Motor de cálculo:</span>
+            <span>Hace cuánto reportó:</span>
             <span className="text-slate-200 font-semibold">
-              SQL AVG() Diario/Semanal
+              {segundosDesdeEnvio !== null
+                ? `Hace ${segundosDesdeEnvio}s`
+                : "--"}
             </span>
           </div>
         </div>
@@ -282,6 +370,45 @@ export default function NodeStatus() {
           </div>
         </section>
       </div>
+
+      {/* Nuevo Bloque: Inspector de Telemetría JSON en Vivo */}
+      <section className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Terminal size={18} className="text-emerald-400" />
+            <div>
+              <h3 className="text-sm font-bold text-white">
+                Inspector de Payload JSON (Última Trama)
+              </h3>
+              <p className="text-xs text-slate-400">
+                Estructura exacta recibida en el endpoint POST /api/compost
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono text-slate-400">
+            ID #{ultimoPaquete?.id ?? "--"}
+          </span>
+        </div>
+
+        <pre className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-400 overflow-x-auto">
+          {ultimoPaquete
+            ? JSON.stringify(
+                {
+                  id_registro: ultimoPaquete.id,
+                  timestamp: ultimoPaquete.fecha_hora,
+                  payload: {
+                    temp_compost: ultimoPaquete.temp_compost,
+                    hum_suelo: ultimoPaquete.hum_suelo,
+                    temp_ambiente: ultimoPaquete.temp_ambiente,
+                    hum_ambiente: ultimoPaquete.hum_ambiente,
+                  },
+                },
+                null,
+                2,
+              )
+            : "// Esperando primera trama JSON desde el ESP32..."}
+        </pre>
+      </section>
     </div>
   );
 }
