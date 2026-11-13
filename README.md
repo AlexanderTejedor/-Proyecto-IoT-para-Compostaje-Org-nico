@@ -1,6 +1,6 @@
 # Sistema de Monitoreo IoT para Compostaje (Modelo 2.0)
 
-Plataforma integral de telemetría y analítica ambiental diseñada por nosotros como equipo para el monitoreo en tiempo real de procesos de compostaje. El sistema captura variables críticas del sustrato y microclima mediante un nodo sensor basado en ESP32, almacena los registros en una API REST con Flask y SQLite, y despliega los indicadores en un Dashboard responsivo (Mobile-First) construido con React y Tailwind CSS.
+Plataforma integral de telemetría y analítica ambiental diseñada para el monitoreo en tiempo real de procesos de compostaje. El sistema captura variables críticas del sustrato y microclima mediante un nodo sensor basado en ESP32, almacena los registros en una API REST con Flask y SQLite, y despliega los indicadores en un Dashboard responsivo (Mobile-First) con soporte de tema claro y oscuro construido con React y Tailwind CSS.
 
 ## Arquitectura del Proyecto
 
@@ -70,15 +70,16 @@ npm run dev
 
 3. Abrir `http://localhost:5173` en el navegador.
 
-## Vistas del Dashboard
+## Vistas y Funcionalidades del Dashboard
 
-- **Hoy (`Home.jsx`):** Anillos circulares en tiempo real, racha de paquetes recibidos y guía rápida de control biológico.
-- **Analítica (`Analytics.jsx`):** Cálculo automático de promedios diarios y semanales, curva de tendencia térmica/hídrica y comparativa frente a rangos óptimos.
-- **Historial (`History.jsx`):** Bitácora filtrable por estado con exportación directa a formato CSV.
-- **Nodo IoT (`NodeStatus.jsx`):** Diagnóstico de latencia, estado de conexión con la API y documentación física de pines y código de colores.
+- **Interfaz Adaptativa (Tema Claro / Oscuro):** Selector persistente en `localStorage` con adaptación automática de contraste en tarjetas, indicadores SVG y gráficas.
+- **Hoy (`Home.jsx`):** Anillos circulares en tiempo real, recarga manual instantánea, centro de alertas biológicas con diagnóstico automático, racha de paquetes recibidos y guía rápida de control biológico.
+- **Analítica (`Analytics.jsx`):** Cálculo automático de promedios diarios y semanales, curva de tendencia en tiempo real, evolución semanal consolidada por día y comparativa frente a rangos óptimos.
+- **Historial (`History.jsx`):** Bitácora filtrable por estado con búsqueda por fecha/ID y exportación directa a formato CSV.
+- **Nodo IoT (`NodeStatus.jsx`):** Test de enlace activo con medición de latencia, inspector de payload JSON en vivo, estado de conexión con la API y documentación física de pines y código de colores.
 
 ## Endpoints de la API
 
 - `POST /api/compost` — Recibe el paquete JSON desde el ESP32 cada 5 segundos y lo almacena en `compostaje_iot.db`.
 - `GET /api/compost/historial` — Retorna las últimas 50 lecturas ordenadas cronológicamente.
-- `GET /api/compost/analitica` — Calcula y retorna los promedios del día actual y de los últimos 7 días.
+- `GET /api/compost/analitica` — Calcula y retorna los promedios del día actual, de los últimos 7 días y la serie agrupada por día.
